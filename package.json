@@ -1,0 +1,11 @@
+{
+  "name": "ortoclin",
+  "version": "1.0.0",
+  "description": "Ferramenta de avaliação ortodôntica",
+  "scripts": {
+    "start": "node server.js",
+    "lint": "echo \"No linter configured\""
+  },
+  "author": "",
+  "license": "MIT"
+}

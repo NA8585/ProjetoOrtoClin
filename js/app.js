@@ -1,711 +1,12 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consultoria Ortodôntica - Sistema Premium</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --dark-blue: #0c1e3e;
-            --mid-blue: #1a3a6d;
-            --light-blue: #2a5a9d;
-            --metallic-gray-dark: #2c323a;
-            --metallic-gray-mid: #4a525a;
-            --metallic-gray-light: #f0f2f5;
-            --gold-main: #d4af37;
-            --gold-hover: #e6c567;
-            --text-light: #f8f9fa;
-            --text-dark: #212529;
-            --border-color: #5a626a;
-            --success: #28a745;
-            --danger: #dc3545;
-        }
+import {
+    saveCaseData,
+    saveImages,
+    saveAnalyses,
+    loadCaseData,
+    loadImages,
+    loadAnalyses
+} from './storage.js';
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            background: var(--metallic-gray-dark);
-            min-height: 100vh;
-            color: var(--text-light);
-        }
-
-        .container {
-            width: 100%;
-            height: 100vh;
-            margin: 0 auto;
-            background: var(--metallic-gray-mid);
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid #666;
-        }
-
-        .header {
-            background: linear-gradient(135deg, var(--dark-blue) 0%, var(--mid-blue) 100%);
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            border-bottom: 2px solid var(--gold-main);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-        
-        .header h1 {
-            font-size: 22px;
-            font-weight: 700;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-        }
-
-        .header p {
-            opacity: 0.8;
-            font-size: 14px;
-        }
-
-        .case-info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            width: 100%;
-        }
-
-        .case-field label {
-            font-size: 12px;
-            opacity: 0.8;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-
-        .case-field input, .case-field select {
-            padding: 8px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 5px;
-            background: var(--metallic-gray-dark);
-            color: var(--text-light);
-            font-size: 13px;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-        .case-field input:focus, .case-field select:focus {
-            outline: none;
-            border-color: var(--gold-main);
-            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
-        }
-
-        .main-content {
-            display: grid;
-            grid-template-columns: 300px 1fr 340px;
-            flex-grow: 1;
-            overflow: hidden;
-        }
-
-        .sidebar, .documentation {
-            background: var(--metallic-gray-dark);
-            padding: 20px;
-            overflow-y: auto;
-            color: var(--text-light);
-        }
-        .sidebar { border-right: 1px solid var(--border-color); }
-        .documentation { border-left: 1px solid var(--border-color); }
-
-        .section-title {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--gold-main);
-            margin-bottom: 15px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .image-thumb {
-            aspect-ratio: 1;
-            border: 3px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            overflow: hidden;
-            position: relative;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        }
-        .image-thumb:hover {
-            border-color: var(--gold-hover);
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.2);
-        }
-        .image-thumb.active {
-            border-color: var(--gold-main);
-            box-shadow: 0 0 0 3px var(--gold-main), 0 5px 15px rgba(212, 175, 55, 0.4);
-        }
-        .image-thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .image-thumb .status-indicator {
-            position: absolute;
-            top: 4px;
-            right: 4px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
-        }
-        .image-thumb .status-indicator.analyzed { background: var(--success); }
-        .image-thumb .status-indicator.pending { background: var(--danger); }
-
-        .upload-area {
-            border: 3px dashed var(--gold-main);
-            border-radius: 10px;
-            padding: 25px;
-            text-align: center;
-            margin: 20px 0;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            background: rgba(212, 175, 55, 0.05);
-        }
-        .upload-area:hover, .upload-area.dragover {
-            border-color: var(--gold-hover);
-            background: rgba(212, 175, 55, 0.15);
-            transform: scale(1.02);
-        }
-        .upload-area p { margin: 5px 0; }
-
-        .tool-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-        .tool-btn {
-            padding: 10px;
-            border: 1px solid var(--border-color);
-            background: var(--metallic-gray-mid);
-            color: var(--text-light);
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-        .tool-btn:hover {
-            border-color: var(--gold-hover);
-            background: var(--metallic-gray-light);
-            color: var(--text-dark);
-        }
-        .tool-btn.active {
-            border-color: var(--gold-main);
-            background: var(--gold-main);
-            color: var(--dark-blue);
-            font-weight: 700;
-            box-shadow: 0 0 10px rgba(212, 175, 55, 0.4);
-        }
-
-        .color-palette {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
-            gap: 8px;
-            margin-bottom: 10px;
-            justify-items: center;
-        }
-        .color-option {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 3px solid transparent;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: inset 0 0 5px rgba(0,0,0,0.4);
-        }
-        .color-option.active {
-            border-color: var(--gold-main);
-            transform: scale(1.15);
-            box-shadow: 0 0 10px var(--gold-main);
-        }
-
-        .slider-group { margin-bottom: 15px; }
-        .slider-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        .slider-group input[type="range"] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 8px;
-            background: var(--metallic-gray-mid);
-            border-radius: 5px;
-            outline: none;
-            border: 1px solid var(--border-color);
-        }
-        .slider-group input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: var(--gold-main);
-            cursor: pointer;
-            border-radius: 50%;
-            border: 2px solid var(--dark-blue);
-        }
-
-        .canvas-area {
-            background: var(--metallic-gray-mid);
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        
-        .canvas-container {
-            flex-grow: 1;
-            position: relative;
-            overflow: hidden;
-            background-color: var(--metallic-gray-dark);
-            background-image:
-                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-            background-size: 20px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        #imageCanvas {
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            background-color: white;
-            transform-origin: center center;
-            border: 1px solid var(--border-color);
-        }
-        
-        .controls-bar {
-            background: var(--dark-blue);
-            color: white;
-            padding: 12px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-            box-shadow: 0 -4px 10px rgba(0,0,0,0.3);
-            z-index: 10;
-            flex-shrink: 0;
-        }
-
-        .zoom-controls { display: flex; align-items: center; gap: 10px; }
-        .zoom-btn, .control-btn {
-            background: var(--metallic-gray-mid);
-            color: white;
-            border: 1px solid var(--border-color);
-            padding: 8px 14px;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 13px;
-            font-weight: 500;
-        }
-        .zoom-btn:hover, .control-btn:hover {
-            background: var(--gold-main);
-            color: var(--dark-blue);
-        }
-
-        .input-group { margin-bottom: 15px; }
-        .input-group label {
-            display: block;
-            font-weight: 500;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-        .input-group input, .input-group textarea, .input-group select {
-            width: 100%;
-            padding: 12px 14px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-size: 14px;
-            transition: all 0.2s ease;
-            background: var(--metallic-gray-mid);
-            color: var(--text-light);
-        }
-        .input-group input:focus, .input-group textarea:focus, .input-group select:focus {
-            outline: none;
-            border-color: var(--gold-main);
-            box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.25);
-        }
-        .input-group textarea { min-height: 120px; resize: vertical; }
-
-        .action-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin: 20px 0;
-        }
-        .action-btn {
-            padding: 12px 14px;
-            border: 1px solid var(--border-color);
-            background: var(--metallic-gray-mid);
-            color: var(--text-light);
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all 0.2s ease;
-        }
-        .action-btn:hover:not(:disabled) {
-            background: var(--metallic-gray-light);
-            color: var(--text-dark);
-            border-color: var(--metallic-gray-light);
-        }
-        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        .main-action-btn {
-            color: var(--dark-blue);
-            border: none;
-            padding: 14px 22px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        #saveAnalysis {
-            background: linear-gradient(135deg, var(--gold-main) 0%, var(--gold-hover) 100%);
-            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.2);
-        }
-        #saveAnalysis:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 7px 20px rgba(212, 175, 55, 0.4);
-        }
-        #exportCase {
-            background: transparent;
-            border: 2px solid var(--gold-main);
-            color: var(--gold-main);
-            padding: 12px 20px;
-        }
-        #exportCase:hover {
-            background: var(--gold-main);
-            color: var(--dark-blue);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(212, 175, 55, 0.3);
-        }
-
-        .image-info {
-            background: var(--metallic-gray-mid);
-            padding: 15px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            border: 1px solid var(--border-color);
-            font-size: 13px;
-        }
-        .image-info p { margin-bottom: 5px; }
-        
-        #fileInput { display: none; }
-        
-        /* Mobile Navigation */
-        #mobile-nav {
-            display: none; /* Hidden by default */
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 60px;
-            background: var(--dark-blue);
-            box-shadow: 0 -5px 15px rgba(0,0,0,0.4);
-            z-index: 1000;
-            border-top: 2px solid var(--gold-main);
-        }
-        .mobile-nav-btn {
-            flex-grow: 1;
-            background: none;
-            border: none;
-            color: var(--text-light);
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            transition: background 0.2s ease, color 0.2s ease;
-        }
-        .mobile-nav-btn.active {
-            background: var(--gold-main);
-            color: var(--dark-blue);
-        }
-        .mobile-nav-btn .icon {
-            font-size: 20px;
-        }
-
-        /* Responsive Styles */
-        @media (max-width: 1200px) {
-            .main-content {
-                grid-template-columns: 260px 1fr 300px;
-            }
-        }
-        
-        @media (max-width: 900px) {
-            body {
-                padding: 0;
-            }
-            .container {
-                border-radius: 0;
-                height: 100vh;
-            }
-            .header {
-                padding: 15px;
-            }
-             .case-info {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .main-content {
-                display: block; /* Change from grid to block */
-                position: relative;
-                padding-bottom: 60px; /* Space for mobile nav */
-            }
-
-            .sidebar, .documentation, .canvas-area {
-                height: 100%;
-                width: 100%;
-                border: none;
-                display: none; /* Hide all panels by default */
-            }
-
-            .main-content.view-tools .sidebar,
-            .main-content.view-canvas .canvas-area,
-            .main-content.view-docs .documentation {
-                display: flex; /* Show only the active panel */
-                flex-direction: column;
-            }
-
-            #mobile-nav {
-                display: flex;
-            }
-        }
-
-        @media (max-width: 500px) {
-            .header h1 { font-size: 18px; }
-            .case-info { grid-template-columns: 1fr; }
-            .controls-bar {
-                flex-wrap: wrap;
-                gap: 10px;
-                padding: 10px;
-                justify-content: center;
-            }
-            #toolStatus { display: none; } /* Hide tool status on very small screens */
-        }
-
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header class="header">
-            <div>
-                <h1>Consultoria Ortodôntica</h1>
-                <p>Análise Profissional</p>
-            </div>
-            <div class="case-info">
-                <div class="case-field">
-                    <label>👤 Paciente</label>
-                    <input type="text" id="patientName">
-                </div>
-                <div class="case-field">
-                    <label>🦷 Dentista</label>
-                    <input type="text" id="dentistName">
-                </div>
-                <div class="case-field">
-                    <label>📅 Data</label>
-                    <input type="date" id="entryDate">
-                </div>
-                <div class="case-field">
-                    <label>📋 Status</label>
-                    <select id="caseStatus">
-                        <option value="pending">Aguardando Análise</option>
-                        <option value="in-progress">Em Andamento</option>
-                        <option value="completed">Concluído</option>
-                        <option value="delivered">Entregue</option>
-                    </select>
-                </div>
-            </div>
-        </header>
-
-        <div class="main-content view-canvas">
-            <!-- Sidebar com Ferramentas -->
-            <div class="sidebar">
-                <div class="section-title">📁 Galeria de Imagens</div>
-                <div class="image-gallery">
-                    <div class="gallery-grid" id="imageGallery"></div>
-                </div>
-
-                <div class="upload-area" id="uploadArea">
-                    <div style="font-size: 32px; margin-bottom: 8px;">📤</div>
-                    <p><strong>Adicionar imagens</strong></p>
-                    <p>Arraste e solte ou clique</p>
-                </div>
-                <input type="file" id="fileInput" accept="image/*,.dcm" multiple>
-
-                <div class="section-title">🎨 Ferramentas</div>
-                <div class="tools-section">
-                    <div class="tool-buttons">
-                        <button class="tool-btn active" data-tool="pen">✏️ Desenho</button>
-                        <button class="tool-btn" data-tool="line">📏 Linha</button>
-                        <button class="tool-btn" data-tool="arrow">➡️ Seta</button>
-                        <button class="tool-btn" data-tool="circle">⭕ Círculo</button>
-                        <button class="tool-btn" data-tool="rectangle">⬜ Retângulo</button>
-                        <button class="tool-btn" data-tool="text">🔤 Texto</button>
-                        <button class="tool-btn" data-tool="eraser">🧽 Borracha</button>
-                    </div>
-
-                    <div class="tool-group">
-                        <label>Cores:</label>
-                        <div class="color-palette">
-                            <div class="color-option active" style="background: #ff4444" data-color="#ff4444"></div>
-                            <div class="color-option" style="background: #4444ff" data-color="#4444ff"></div>
-                            <div class="color-option" style="background: #44ff44" data-color="#44ff44"></div>
-                            <div class="color-option" style="background: #ffff44" data-color="#ffff44"></div>
-                            <div class="color-option" style="background: #ff44ff" data-color="#ff44ff"></div>
-                            <div class="color-option" style="background: #44ffff" data-color="#44ffff"></div>
-                            <div class="color-option" style="background: #ffffff;" data-color="#ffffff"></div>
-                            <div class="color-option" style="background: #000000" data-color="#000000"></div>
-                        </div>
-                    </div>
-
-                    <div class="slider-group">
-                        <label>Espessura: <span id="strokeValue">3</span>px</label>
-                        <input type="range" id="strokeWidth" min="1" max="50" value="3">
-                    </div>
-                </div>
-                
-                <div class="section-title">🔧 Ajustes de Imagem</div>
-                 <div class="slider-group">
-                    <label>Brilho: <span id="brightnessValue">100</span>%</label>
-                    <input type="range" id="brightness" min="0" max="200" value="100">
-                </div>
-                <div class="slider-group">
-                    <label>Contraste: <span id="contrastValue">100</span>%</label>
-                    <input type="range" id="contrast" min="0" max="200" value="100">
-                </div>
-
-                <div class="action-buttons">
-                    <button class="action-btn" id="undoBtn" disabled>↶ Desfazer</button>
-                    <button class="action-btn" id="redoBtn" disabled>↷ Refazer</button>
-                    <button class="action-btn" id="clearBtn" disabled>🗑️ Limpar</button>
-                    <button class="action-btn" id="duplicateBtn" disabled>📋 Duplicar</button>
-                </div>
-            </div>
-
-            <!-- Área do Canvas -->
-            <div class="canvas-area">
-                <div class="canvas-container" id="canvasContainer">
-                    <canvas id="imageCanvas"></canvas>
-                    <div id="noImageMessage" style="text-align: center; color: var(--text-light); font-size: 18px; padding: 20px;">
-                        <div style="font-size: 64px; margin-bottom: 20px;">🖼️</div>
-                        <p>Carregue ou selecione uma imagem para começar</p>
-                    </div>
-                </div>
-                <div class="controls-bar">
-                    <div class="zoom-controls">
-                        <button class="zoom-btn" id="zoomOut" title="Zoom Out (Scroll)">🔍-</button>
-                        <span id="zoomLevel" class="zoom-btn">100%</span>
-                        <button class="zoom-btn" id="zoomIn" title="Zoom In (Scroll)">🔍+</button>
-                        <button class="zoom-btn" id="fitToScreen">Ajustar</button>
-                        <button class="zoom-btn" id="resetZoom">1:1</button>
-                    </div>
-                    <div>
-                        <span id="toolStatus">Desenho livre</span>
-                    </div>
-                     <div>
-                        <span id="imageCounter">Nenhuma imagem</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Área de Documentação -->
-            <div class="documentation">
-                <div class="section-title">📋 Info da Imagem</div>
-                <div class="image-info" id="imageInfo">
-                    <p>Nenhuma imagem selecionada</p>
-                </div>
-
-                <div class="input-group">
-                    <label>🏷️ Título da Imagem:</label>
-                    <input type="text" id="imageTitle" placeholder="Ex: Radiografia Panorâmica">
-                </div>
-
-                <div class="input-group">
-                    <label>📊 Tipo de Análise:</label>
-                    <select id="analysisType">
-                        <option value="">Selecione o tipo</option>
-                        <option value="panoramic">Radiografia Panorâmica</option>
-                        <option value="lateral">Telerradiografia Lateral</option>
-                        <option value="intraoral">Foto Intraoral</option>
-                        <option value="model">Modelo de Gesso</option>
-                        <option value="cbct">Tomografia CBCT</option>
-                        <option value="other">Outro</option>
-                    </select>
-                </div>
-
-                <div class="section-title">📝 Parecer Técnico</div>
-                <div class="input-group">
-                    <label>Observações Clínicas:</label>
-                    <textarea id="clinicalObservations" placeholder="Descreva suas observações..."></textarea>
-                </div>
-
-                <div class="input-group">
-                    <label>Plano de Tratamento:</label>
-                    <textarea id="treatmentPlan" placeholder="Detalhe o plano proposto..."></textarea>
-                </div>
-
-                <button class="main-action-btn" id="saveAnalysis">💾 Salvar Análise</button>
-                <button class="main-action-btn" id="exportCase">📄 Gerar Relatório</button>
-
-            </div>
-        </div>
-        
-        <nav id="mobile-nav">
-             <button class="mobile-nav-btn" data-view="tools">
-                <span class="icon">🛠️</span>
-                <span>Ferramentas</span>
-            </button>
-            <button class="mobile-nav-btn active" data-view="canvas">
-                <span class="icon">🖼️</span>
-                <span>Canvas</span>
-            </button>
-            <button class="mobile-nav-btn" data-view="docs">
-                <span class="icon">📄</span>
-                <span>Laudo</span>
-            </button>
-        </nav>
-    </div>
-
-    <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- DOM Elements ---
             const mainContent = document.querySelector('.main-content');
@@ -714,7 +15,13 @@
             const canvasContainer = document.getElementById('canvasContainer');
             const uploadArea = document.getElementById('uploadArea');
             const fileInput = document.getElementById('fileInput');
+            const uploadProgressContainer = document.getElementById('uploadProgressContainer');
+            const uploadProgress = document.getElementById('uploadProgress');
+            const uploadError = document.getElementById('uploadError');
             const noImageMessage = document.getElementById('noImageMessage');
+            const clinicNameInput = document.getElementById('clinicName');
+            const clinicLogoInput = document.getElementById('clinicLogoInput');
+            const clinicLogoPreview = document.getElementById('clinicLogoPreview');
 
             // --- State Variables ---
             let images = []; 
@@ -734,6 +41,8 @@
             let panY = 0;
             let isPanning = false;
             let lastPanX, lastPanY;
+
+            const MAX_FILE_SIZE_MB = 5;
 
             // History
             let history = [];
@@ -760,27 +69,33 @@
                     dentistName: document.getElementById('dentistName').value,
                     entryDate: document.getElementById('entryDate').value,
                     caseStatus: document.getElementById('caseStatus').value,
+                    clinicName: clinicNameInput.value,
+                    clinicLogo: clinicLogoPreview.src || ''
                 };
-                localStorage.setItem('orthoCaseData', JSON.stringify(caseData));
-                
-                const serializableImages = images.map(img => ({ ...img, img: img.img.src }));
-                localStorage.setItem('orthoImages', JSON.stringify(serializableImages));
-                localStorage.setItem('orthoAnalyses', JSON.stringify(analyses));
+
+                saveCaseData(caseData);
+                saveImages(images);
+                saveAnalyses(analyses);
             };
             
             const loadFromLocalStorage = () => {
-                const caseData = JSON.parse(localStorage.getItem('orthoCaseData'));
+                const caseData = loadCaseData();
                 if (caseData) {
                     document.getElementById('patientName').value = caseData.patientName || '';
                     document.getElementById('dentistName').value = caseData.dentistName || '';
                     document.getElementById('entryDate').value = caseData.entryDate || new Date().toISOString().split('T')[0];
                     document.getElementById('caseStatus').value = caseData.caseStatus || 'pending';
+                    clinicNameInput.value = caseData.clinicName || '';
+                    if (caseData.clinicLogo) {
+                        clinicLogoPreview.src = caseData.clinicLogo;
+                        clinicLogoPreview.style.display = 'block';
+                    }
                 } else {
                     document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
                 }
 
-                const storedImages = JSON.parse(localStorage.getItem('orthoImages'));
-                const storedAnalyses = JSON.parse(localStorage.getItem('orthoAnalyses'));
+                const storedImages = loadImages();
+                const storedAnalyses = loadAnalyses();
                 
                 if (storedAnalyses) analyses = storedAnalyses;
 
@@ -803,8 +118,20 @@
 
             // --- Event Listeners ---
             const setupEventListeners = () => {
-                ['patientName', 'dentistName', 'entryDate', 'caseStatus'].forEach(id => {
+                ['patientName', 'dentistName', 'entryDate', 'caseStatus', 'clinicName'].forEach(id => {
                     document.getElementById(id).addEventListener('change', saveToLocalStorage);
+                });
+
+                clinicLogoInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        clinicLogoPreview.src = reader.result;
+                        clinicLogoPreview.style.display = 'block';
+                        saveToLocalStorage();
+                    };
+                    reader.readAsDataURL(file);
                 });
                 
                 uploadArea.addEventListener('click', () => fileInput.click());
@@ -855,6 +182,18 @@
                     setTimeout(() => btn.innerHTML = '💾 Salvar Análise', 2000);
                 });
                 document.getElementById('exportCase').addEventListener('click', exportCase);
+                document.getElementById('exportJSON').addEventListener('click', exportJSON);
+
+                document.addEventListener('keydown', (e) => {
+                    const key = e.key.toLowerCase();
+                    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && key === 'z') {
+                        e.preventDefault();
+                        undo();
+                    } else if ((e.ctrlKey || e.metaKey) && (key === 'y' || (e.shiftKey && key === 'z'))) {
+                        e.preventDefault();
+                        redo();
+                    }
+                });
             };
 
              // --- Mobile Navigation ---
@@ -911,28 +250,55 @@
             };
 
             const handleFiles = (files) => {
-                [...files].forEach(file => {
-                    if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            const img = new Image();
-                            img.onload = () => {
-                                const newImage = {
-                                    id: Date.now() + Math.random(),
-                                    name: file.name,
-                                    img: img,
-                                    annotations: []
-                                };
-                                images.push(newImage);
-                                analyses[newImage.id] = {};
-                                renderGallery();
-                                selectImage(images.length - 1);
-                                saveToLocalStorage();
+                const errors = [];
+                const list = [...files].filter(f => {
+                    const validType = f.type.startsWith('image/') || f.name.toLowerCase().endsWith('.dcm');
+                    const validSize = f.size <= MAX_FILE_SIZE_MB * 1024 * 1024;
+                    if (!validType) errors.push(`${f.name} possui tipo inválido`);
+                    if (!validSize) errors.push(`${f.name} excede ${MAX_FILE_SIZE_MB}MB`);
+                    return validType && validSize;
+                });
+
+                if (errors.length > 0) {
+                    uploadError.innerHTML = errors.join('<br>');
+                    uploadError.style.display = 'block';
+                    setTimeout(() => { uploadError.style.display = 'none'; }, 5000);
+                }
+
+                if (list.length === 0) return;
+
+                uploadProgressContainer.style.display = 'block';
+                let processed = 0;
+
+                list.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const newImage = {
+                                id: Date.now() + Math.random(),
+                                name: file.name,
+                                img: img,
+                                annotations: []
                             };
-                            img.src = e.target.result;
+                            images.push(newImage);
+                            analyses[newImage.id] = {};
+                            renderGallery();
+                            selectImage(images.length - 1);
+                            saveToLocalStorage();
+
+                            processed++;
+                            uploadProgress.style.width = `${Math.round(processed / list.length * 100)}%`;
+                            if (processed === list.length) {
+                                setTimeout(() => {
+                                    uploadProgressContainer.style.display = 'none';
+                                    uploadProgress.style.width = '0%';
+                                }, 500);
+                            }
                         };
-                        reader.readAsDataURL(file);
-                    }
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
                 });
             };
             
@@ -1263,7 +629,7 @@
                 uploadArea.addEventListener('drop', e => handleFiles(e.dataTransfer.files), false);
             };
             const exportCase = () => {
-                const caseData = JSON.parse(localStorage.getItem('orthoCaseData')) || {};
+                const caseData = loadCaseData() || {};
                 
                 let reportHtml = `
                     <!DOCTYPE html><html lang="pt-BR"><head><title>Relatório</title>
@@ -1275,7 +641,11 @@
                         strong { color: #1a3a6d; } pre { background: #eee; padding: 15px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; }
                         img { max-width: 100%; border-radius: 5px; margin-top: 15px; }
                     </style></head><body><div class="container">
-                    <div class="header"><h1>Relatório de Consultoria Ortodôntica</h1><p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p></div>
+                    <div class="header">
+                        ${caseData.clinicLogo ? `<img src="${caseData.clinicLogo}" style="max-height:80px; margin-bottom:10px;" />` : ''}
+                        <h1>${caseData.clinicName || 'Consultoria Ortodôntica'}</h1>
+                        <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+                    </div>
                     <div class="case-info"><h2>Informações do Caso</h2>
                         <p><strong>Paciente:</strong> ${caseData.patientName || 'Não informado'}</p>
                         <p><strong>Dentista:</strong> ${caseData.dentistName || 'Não informado'}</p>
@@ -1314,8 +684,35 @@
                 URL.revokeObjectURL(url);
             };
 
+            const exportJSON = () => {
+                const caseData = loadCaseData() || {};
+
+                const imagesData = images.map(imgData => {
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = imgData.img.width;
+                    tempCanvas.height = imgData.img.height;
+                    tempCtx.drawImage(imgData.img, 0, 0);
+                    drawAnnotations.call({ ctx: tempCtx, zoom: 1 }, imgData.annotations);
+                    const annotated = tempCanvas.toDataURL('image/jpeg', 0.9);
+                    return {
+                        id: imgData.id,
+                        name: imgData.name,
+                        annotatedImage: annotated,
+                        annotations: imgData.annotations,
+                        analysis: analyses[imgData.id] || {}
+                    };
+                });
+
+                const exportData = { caseData, images: imagesData };
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Caso_${caseData.patientName?.replace(/\s+/g, '_') || 'dados'}.json`;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
             init();
         });
-    </script>
-</body>
-</html>

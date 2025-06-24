@@ -70,15 +70,15 @@
 8. Operações de armazenamento modularizadas em `js/storage.js`.
 9. Exportação completa dos dados do caso em arquivo JSON.
 10. Cabeçalho do relatório agora suporta nome e logotipo personalizados da clínica.
+11. Estilo `glass-card` aplicado nos painéis de upload e informações da imagem.
+12. Imagens exportadas são redimensionadas e comprimidas para reduzir o tamanho final dos arquivos.
+13. ESLint configurado para padronizar o código com regras básicas.
 
 ### A Fazer
 1. Refinar layout e responsividade conforme itens da seção 4.
 2. Implementar melhorias nas ferramentas de anotação além dos atalhos básicos.
-3. Otimizar imagens geradas para reduzir o tamanho do relatório.
-4. Integrar um linter real (ESLint/Stylelint) e corrigir os avisos apontados.
-5. Aplicar o estilo `.glass-card` nos componentes adequados da interface.
-6. Revisar a exportação de relatórios garantindo compressão das imagens e dados consistentes.
-7. Realizar testes em diferentes navegadores e registrar o procedimento no README.
+3. Revisar a exportação de relatórios garantindo compressão das imagens e dados consistentes.
+4. Realizar testes em diferentes navegadores e registrar o procedimento no README.
 
 ## 9. Conclusão e Entrega
 1. Após concluir as tarefas acima, congelar a branch principal para release.

@@ -22,7 +22,8 @@ import {
             const clinicNameInput = document.getElementById('clinicName');
             const clinicLogoInput = document.getElementById('clinicLogoInput');
             const clinicLogoPreview = document.getElementById('clinicLogoPreview');
-     // --- State Variables ---
+
+            // --- State Variables ---
             let images = []; 
             let analyses = {};
             let currentImageIndex = -1;
@@ -42,7 +43,7 @@ import {
             let lastPanX, lastPanY;
 
             const MAX_FILE_SIZE_MB = 5;
-
+            const MAX_EXPORT_DIMENSION = 1200;
             // History
             let history = [];
             let historyStep = -1;
@@ -79,7 +80,6 @@ import {
             
             const loadFromLocalStorage = () => {
                 const caseData = loadCaseData();
-
                 if (caseData) {
                     document.getElementById('patientName').value = caseData.patientName || '';
                     document.getElementById('dentistName').value = caseData.dentistName || '';
@@ -493,6 +493,51 @@ import {
                 ctx.lineTo(x2 - headLength * Math.cos(angle + Math.PI / 6), y2 - headLength * Math.sin(angle + Math.PI / 6));
                 ctx.stroke();
             };
+
+            const drawAnnotationsScaled = (context, annotations) => {
+                context.lineCap = 'round';
+                context.lineJoin = 'round';
+                annotations.forEach(ann => {
+                    context.strokeStyle = ann.color;
+                    context.fillStyle = ann.color;
+                    context.lineWidth = ann.stroke;
+                    context.beginPath();
+                    switch(ann.type) {
+                        case 'pen':
+                            ann.points.forEach((p, i) => i === 0 ? context.moveTo(p.x, p.y) : context.lineTo(p.x, p.y));
+                            context.stroke();
+                            break;
+                        case 'line':
+                            context.moveTo(ann.x1, ann.y1);
+                            context.lineTo(ann.x2, ann.y2);
+                            context.stroke();
+                            break;
+                        case 'arrow': {
+                            const headLength = Math.max(10, ann.stroke * 3);
+                            const angle = Math.atan2(ann.y2 - ann.y1, ann.x2 - ann.x1);
+                            context.moveTo(ann.x1, ann.y1);
+                            context.lineTo(ann.x2, ann.y2);
+                            context.lineTo(ann.x2 - headLength * Math.cos(angle - Math.PI / 6), ann.y2 - headLength * Math.sin(angle - Math.PI / 6));
+                            context.moveTo(ann.x2, ann.y2);
+                            context.lineTo(ann.x2 - headLength * Math.cos(angle + Math.PI / 6), ann.y2 - headLength * Math.sin(angle + Math.PI / 6));
+                            context.stroke();
+                            break;
+                        }
+                        case 'circle':
+                            const r = Math.hypot(ann.x2 - ann.x1, ann.y2 - ann.y1);
+                            context.arc(ann.x1, ann.y1, r, 0, 2 * Math.PI);
+                            context.stroke();
+                            break;
+                        case 'rectangle':
+                            context.strokeRect(ann.x1, ann.y1, ann.x2 - ann.x1, ann.y2 - ann.y1);
+                            break;
+                        case 'text':
+                            context.font = `${ann.stroke * 4}px Roboto`;
+                            context.fillText(ann.text, ann.x, ann.y);
+                            break;
+                    }
+                });
+            };
              const applyZoom = (factor, clientX, clientY) => {
                 const rect = canvas.getBoundingClientRect();
                 const mouseX = (clientX ?? rect.left + rect.width / 2) - rect.left;
@@ -657,11 +702,14 @@ import {
                     const analysis = analyses[imgData.id] || {};
                     const tempCanvas = document.createElement('canvas');
                     const tempCtx = tempCanvas.getContext('2d');
-                    tempCanvas.width = imgData.img.width;
-                    tempCanvas.height = imgData.img.height;
+
+                    const scale = Math.min(1, MAX_EXPORT_DIMENSION / Math.max(imgData.img.width, imgData.img.height));
+                    tempCanvas.width = imgData.img.width * scale;
+                    tempCanvas.height = imgData.img.height * scale;
+                    tempCtx.scale(scale, scale);
                     tempCtx.drawImage(imgData.img, 0, 0);
-                    drawAnnotations.call({ ctx: tempCtx, zoom: 1 }, imgData.annotations);
-                    const annotatedImageURL = tempCanvas.toDataURL('image/jpeg', 0.9);
+                    drawAnnotationsScaled(tempCtx, imgData.annotations);
+                    const annotatedImageURL = tempCanvas.toDataURL('image/jpeg', 0.85);
 
                     reportHtml += `
                         <div class="image-analysis">
@@ -690,11 +738,14 @@ import {
                 const imagesData = images.map(imgData => {
                     const tempCanvas = document.createElement('canvas');
                     const tempCtx = tempCanvas.getContext('2d');
-                    tempCanvas.width = imgData.img.width;
-                    tempCanvas.height = imgData.img.height;
+
+                    const scale = Math.min(1, MAX_EXPORT_DIMENSION / Math.max(imgData.img.width, imgData.img.height));
+                    tempCanvas.width = imgData.img.width * scale;
+                    tempCanvas.height = imgData.img.height * scale;
+                    tempCtx.scale(scale, scale);
                     tempCtx.drawImage(imgData.img, 0, 0);
-                    drawAnnotations.call({ ctx: tempCtx, zoom: 1 }, imgData.annotations);
-                    const annotated = tempCanvas.toDataURL('image/jpeg', 0.9);
+                    drawAnnotationsScaled(tempCtx, imgData.annotations);
+                    const annotated = tempCanvas.toDataURL('image/jpeg', 0.85);
                     return {
                         id: imgData.id,
                         name: imgData.name,

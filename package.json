@@ -2,9 +2,13 @@
   "name": "ortoclin",
   "version": "1.0.0",
   "description": "Ferramenta de avaliação ortodôntica",
+  "type": "module",
   "scripts": {
     "start": "node server.js",
-    "lint": "echo \"No linter configured\""
+    "lint": "eslint \"**/*.js\""
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0"
   },
   "author": "",
   "license": "MIT"

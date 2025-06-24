@@ -84,4 +84,3 @@
 1. Após concluir as tarefas acima, congelar a branch principal para release.
 2. Gerar versão otimizada dos arquivos (HTML/CSS/JS minificados).
 3. Atualizar a documentação com instruções finais e exemplos de uso.
-

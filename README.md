@@ -16,10 +16,8 @@ do repositório após essa reestruturação.
 
 O upload de imagens exibe barra de progresso e rejeita arquivos acima de 5MB ou
 com tipo inválido. Os dados são persistidos no `localStorage` do navegador.
-
 Alguns painéis utilizam o estilo `glass-card`, que aplica efeito fosco translúcido.
 Ele está presente na área de upload e no bloco de informações da imagem.
-
 No bloco de informações do caso é possível definir o nome da clínica e fazer
 upload de um logotipo. Esses dados serão utilizados no cabeçalho do relatório
 gerado.

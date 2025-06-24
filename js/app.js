@@ -44,7 +44,6 @@ import {
 
             const MAX_FILE_SIZE_MB = 5;
             const MAX_EXPORT_DIMENSION = 1200;
-
             // History
             let history = [];
             let historyStep = -1;

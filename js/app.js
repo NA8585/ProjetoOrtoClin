@@ -22,8 +22,7 @@ import {
             const clinicNameInput = document.getElementById('clinicName');
             const clinicLogoInput = document.getElementById('clinicLogoInput');
             const clinicLogoPreview = document.getElementById('clinicLogoPreview');
-
-            // --- State Variables ---
+     // --- State Variables ---
             let images = []; 
             let analyses = {};
             let currentImageIndex = -1;
@@ -80,6 +79,7 @@ import {
             
             const loadFromLocalStorage = () => {
                 const caseData = loadCaseData();
+
                 if (caseData) {
                     document.getElementById('patientName').value = caseData.patientName || '';
                     document.getElementById('dentistName').value = caseData.dentistName || '';

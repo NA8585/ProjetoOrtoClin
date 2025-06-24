@@ -24,6 +24,9 @@ gerado.
 - **Ctrl+Z**: desfazer última anotação
 - **Ctrl+Shift+Z** ou **Ctrl+Y**: refazer
 
+- `server.js` - servidor estático simples.
+- `PLAN.md` - planejamento das próximas etapas.
+
 ## Como executar
 1. Certifique-se de ter o Node.js instalado.
 2. No terminal, execute:

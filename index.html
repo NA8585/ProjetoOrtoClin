@@ -38,6 +38,15 @@
                         <option value="delivered">Entregue</option>
                     </select>
                 </div>
+                <div class="case-field">
+                    <label>🏥 Clínica</label>
+                    <input type="text" id="clinicName" placeholder="Nome da Clínica">
+                </div>
+                <div class="case-field">
+                    <label>📷 Logo</label>
+                    <input type="file" id="clinicLogoInput" accept="image/*">
+                    <img id="clinicLogoPreview" class="logo-preview" style="display:none; margin-top:5px; max-height:60px;">
+                </div>
             </div>
         </header>
 
@@ -55,6 +64,10 @@
                     <p>Arraste e solte ou clique</p>
                 </div>
                 <input type="file" id="fileInput" accept="image/*,.dcm" multiple>
+                <div id="uploadProgressContainer" class="progress-container">
+                <div id="uploadProgress" class="progress-bar"></div>
+                </div>
+                <div id="uploadError" class="error-message" style="display:none;"></div>
 
                 <div class="section-title">🎨 Ferramentas</div>
                 <div class="tools-section">
@@ -170,6 +183,7 @@
 
                 <button class="main-action-btn" id="saveAnalysis">💾 Salvar Análise</button>
                 <button class="main-action-btn" id="exportCase">📄 Gerar Relatório</button>
+                <button class="main-action-btn" id="exportJSON">🗄️ Exportar JSON</button>
 
             </div>
         </div>
@@ -190,6 +204,6 @@
         </nav>
     </div>
 
-    <script src="js/app.js" defer></script>
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>

@@ -1,8 +1,9 @@
 # Plano de Evolução da Aplicação
 
 ## 1. Análise do Estado Atual
-- O repositório contém apenas o arquivo `portalaval.html` com cerca de 1300 linhas.
-- Todo o código CSS e JavaScript está embutido neste único arquivo.
+- O repositório original possuía apenas o arquivo `portalaval.html` com cerca de 1300 linhas.
+- Todo o código CSS e JavaScript estava embutido nesse único arquivo.
+- Após a reorganização, esse arquivo foi removido e a aplicação está dividida em arquivos HTML, CSS e JS separados.
 - O layout segue estilo próprio com paleta de cores definida em variáveis CSS.
 - A lógica JS controla ferramentas de anotação, ajustes de imagem, armazenamento em `localStorage` e geração de relatório HTML.
 
@@ -56,3 +57,30 @@
 3. Versionar todas as alterações com mensagens claras de commit.
 4. Assim que a estrutura estiver estável, evoluir para implementar novos recursos solicitados pela equipe de produto.
 
+## 8. Status Atual do Desenvolvimento
+
+### Concluído
+1. Código original de `portalaval.html` dividido em `index.html`, `css/styles.css` e `js/app.js`.
+2. Adicionado servidor estático (`server.js`) e `package.json` com scripts `start` e `lint`.
+3. Documentação inicial no `README.md` com instruções de uso.
+4. Criado estilo `.glass-card` para futuros componentes de interface.
+5. Barra de progresso adicionada na área de upload de imagens.
+6. Validação de tamanho e tipo das imagens durante o upload, com exibição de erros.
+7. Atalhos de teclado para desfazer/refazer com Ctrl+Z e Ctrl+Shift+Z.
+8. Operações de armazenamento modularizadas em `js/storage.js`.
+9. Exportação completa dos dados do caso em arquivo JSON.
+10. Cabeçalho do relatório agora suporta nome e logotipo personalizados da clínica.
+
+### A Fazer
+1. Refinar layout e responsividade conforme itens da seção 4.
+2. Implementar melhorias nas ferramentas de anotação além dos atalhos básicos.
+3. Otimizar imagens geradas para reduzir o tamanho do relatório.
+4. Integrar um linter real (ESLint/Stylelint) e corrigir os avisos apontados.
+5. Aplicar o estilo `.glass-card` nos componentes adequados da interface.
+6. Revisar a exportação de relatórios garantindo compressão das imagens e dados consistentes.
+7. Realizar testes em diferentes navegadores e registrar o procedimento no README.
+
+## 9. Conclusão e Entrega
+1. Após concluir as tarefas acima, congelar a branch principal para release.
+2. Gerar versão otimizada dos arquivos (HTML/CSS/JS minificados).
+3. Atualizar a documentação com instruções finais e exemplos de uso.

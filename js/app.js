@@ -1,3 +1,12 @@
+import {
+    saveCaseData,
+    saveImages,
+    saveAnalyses,
+    loadCaseData,
+    loadImages,
+    loadAnalyses
+} from './storage.js';
+
         document.addEventListener('DOMContentLoaded', () => {
             // --- DOM Elements ---
             const mainContent = document.querySelector('.main-content');
@@ -6,9 +15,14 @@
             const canvasContainer = document.getElementById('canvasContainer');
             const uploadArea = document.getElementById('uploadArea');
             const fileInput = document.getElementById('fileInput');
+            const uploadProgressContainer = document.getElementById('uploadProgressContainer');
+            const uploadProgress = document.getElementById('uploadProgress');
+            const uploadError = document.getElementById('uploadError');
             const noImageMessage = document.getElementById('noImageMessage');
-
-            // --- State Variables ---
+            const clinicNameInput = document.getElementById('clinicName');
+            const clinicLogoInput = document.getElementById('clinicLogoInput');
+            const clinicLogoPreview = document.getElementById('clinicLogoPreview');
+     // --- State Variables ---
             let images = []; 
             let analyses = {};
             let currentImageIndex = -1;
@@ -26,6 +40,8 @@
             let panY = 0;
             let isPanning = false;
             let lastPanX, lastPanY;
+
+            const MAX_FILE_SIZE_MB = 5;
 
             // History
             let history = [];
@@ -52,27 +68,34 @@
                     dentistName: document.getElementById('dentistName').value,
                     entryDate: document.getElementById('entryDate').value,
                     caseStatus: document.getElementById('caseStatus').value,
+                    clinicName: clinicNameInput.value,
+                    clinicLogo: clinicLogoPreview.src || ''
                 };
-                localStorage.setItem('orthoCaseData', JSON.stringify(caseData));
-                
-                const serializableImages = images.map(img => ({ ...img, img: img.img.src }));
-                localStorage.setItem('orthoImages', JSON.stringify(serializableImages));
-                localStorage.setItem('orthoAnalyses', JSON.stringify(analyses));
+
+                saveCaseData(caseData);
+                saveImages(images);
+                saveAnalyses(analyses);
             };
             
             const loadFromLocalStorage = () => {
-                const caseData = JSON.parse(localStorage.getItem('orthoCaseData'));
+                const caseData = loadCaseData();
+
                 if (caseData) {
                     document.getElementById('patientName').value = caseData.patientName || '';
                     document.getElementById('dentistName').value = caseData.dentistName || '';
                     document.getElementById('entryDate').value = caseData.entryDate || new Date().toISOString().split('T')[0];
                     document.getElementById('caseStatus').value = caseData.caseStatus || 'pending';
+                    clinicNameInput.value = caseData.clinicName || '';
+                    if (caseData.clinicLogo) {
+                        clinicLogoPreview.src = caseData.clinicLogo;
+                        clinicLogoPreview.style.display = 'block';
+                    }
                 } else {
                     document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
                 }
 
-                const storedImages = JSON.parse(localStorage.getItem('orthoImages'));
-                const storedAnalyses = JSON.parse(localStorage.getItem('orthoAnalyses'));
+                const storedImages = loadImages();
+                const storedAnalyses = loadAnalyses();
                 
                 if (storedAnalyses) analyses = storedAnalyses;
 
@@ -95,8 +118,20 @@
 
             // --- Event Listeners ---
             const setupEventListeners = () => {
-                ['patientName', 'dentistName', 'entryDate', 'caseStatus'].forEach(id => {
+                ['patientName', 'dentistName', 'entryDate', 'caseStatus', 'clinicName'].forEach(id => {
                     document.getElementById(id).addEventListener('change', saveToLocalStorage);
+                });
+
+                clinicLogoInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        clinicLogoPreview.src = reader.result;
+                        clinicLogoPreview.style.display = 'block';
+                        saveToLocalStorage();
+                    };
+                    reader.readAsDataURL(file);
                 });
                 
                 uploadArea.addEventListener('click', () => fileInput.click());
@@ -147,6 +182,18 @@
                     setTimeout(() => btn.innerHTML = '💾 Salvar Análise', 2000);
                 });
                 document.getElementById('exportCase').addEventListener('click', exportCase);
+                document.getElementById('exportJSON').addEventListener('click', exportJSON);
+
+                document.addEventListener('keydown', (e) => {
+                    const key = e.key.toLowerCase();
+                    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && key === 'z') {
+                        e.preventDefault();
+                        undo();
+                    } else if ((e.ctrlKey || e.metaKey) && (key === 'y' || (e.shiftKey && key === 'z'))) {
+                        e.preventDefault();
+                        redo();
+                    }
+                });
             };
 
              // --- Mobile Navigation ---
@@ -203,28 +250,55 @@
             };
 
             const handleFiles = (files) => {
-                [...files].forEach(file => {
-                    if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = (e) => {
-                            const img = new Image();
-                            img.onload = () => {
-                                const newImage = {
-                                    id: Date.now() + Math.random(),
-                                    name: file.name,
-                                    img: img,
-                                    annotations: []
-                                };
-                                images.push(newImage);
-                                analyses[newImage.id] = {};
-                                renderGallery();
-                                selectImage(images.length - 1);
-                                saveToLocalStorage();
+                const errors = [];
+                const list = [...files].filter(f => {
+                    const validType = f.type.startsWith('image/') || f.name.toLowerCase().endsWith('.dcm');
+                    const validSize = f.size <= MAX_FILE_SIZE_MB * 1024 * 1024;
+                    if (!validType) errors.push(`${f.name} possui tipo inválido`);
+                    if (!validSize) errors.push(`${f.name} excede ${MAX_FILE_SIZE_MB}MB`);
+                    return validType && validSize;
+                });
+
+                if (errors.length > 0) {
+                    uploadError.innerHTML = errors.join('<br>');
+                    uploadError.style.display = 'block';
+                    setTimeout(() => { uploadError.style.display = 'none'; }, 5000);
+                }
+
+                if (list.length === 0) return;
+
+                uploadProgressContainer.style.display = 'block';
+                let processed = 0;
+
+                list.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const newImage = {
+                                id: Date.now() + Math.random(),
+                                name: file.name,
+                                img: img,
+                                annotations: []
                             };
-                            img.src = e.target.result;
+                            images.push(newImage);
+                            analyses[newImage.id] = {};
+                            renderGallery();
+                            selectImage(images.length - 1);
+                            saveToLocalStorage();
+
+                            processed++;
+                            uploadProgress.style.width = `${Math.round(processed / list.length * 100)}%`;
+                            if (processed === list.length) {
+                                setTimeout(() => {
+                                    uploadProgressContainer.style.display = 'none';
+                                    uploadProgress.style.width = '0%';
+                                }, 500);
+                            }
                         };
-                        reader.readAsDataURL(file);
-                    }
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
                 });
             };
             
@@ -555,7 +629,7 @@
                 uploadArea.addEventListener('drop', e => handleFiles(e.dataTransfer.files), false);
             };
             const exportCase = () => {
-                const caseData = JSON.parse(localStorage.getItem('orthoCaseData')) || {};
+                const caseData = loadCaseData() || {};
                 
                 let reportHtml = `
                     <!DOCTYPE html><html lang="pt-BR"><head><title>Relatório</title>
@@ -567,7 +641,11 @@
                         strong { color: #1a3a6d; } pre { background: #eee; padding: 15px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; }
                         img { max-width: 100%; border-radius: 5px; margin-top: 15px; }
                     </style></head><body><div class="container">
-                    <div class="header"><h1>Relatório de Consultoria Ortodôntica</h1><p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p></div>
+                    <div class="header">
+                        ${caseData.clinicLogo ? `<img src="${caseData.clinicLogo}" style="max-height:80px; margin-bottom:10px;" />` : ''}
+                        <h1>${caseData.clinicName || 'Consultoria Ortodôntica'}</h1>
+                        <p>Gerado em: ${new Date().toLocaleString('pt-BR')}</p>
+                    </div>
                     <div class="case-info"><h2>Informações do Caso</h2>
                         <p><strong>Paciente:</strong> ${caseData.patientName || 'Não informado'}</p>
                         <p><strong>Dentista:</strong> ${caseData.dentistName || 'Não informado'}</p>
@@ -602,6 +680,36 @@
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `Relatorio_${caseData.patientName?.replace(/\s+/g, '_') || 'Caso'}.html`;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
+            const exportJSON = () => {
+                const caseData = loadCaseData() || {};
+
+                const imagesData = images.map(imgData => {
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = imgData.img.width;
+                    tempCanvas.height = imgData.img.height;
+                    tempCtx.drawImage(imgData.img, 0, 0);
+                    drawAnnotations.call({ ctx: tempCtx, zoom: 1 }, imgData.annotations);
+                    const annotated = tempCanvas.toDataURL('image/jpeg', 0.9);
+                    return {
+                        id: imgData.id,
+                        name: imgData.name,
+                        annotatedImage: annotated,
+                        annotations: imgData.annotations,
+                        analysis: analyses[imgData.id] || {}
+                    };
+                });
+
+                const exportData = { caseData, images: imagesData };
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Caso_${caseData.patientName?.replace(/\s+/g, '_') || 'dados'}.json`;
                 document.body.appendChild(a); a.click(); document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             };
